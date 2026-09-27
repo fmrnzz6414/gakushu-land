@@ -24,11 +24,21 @@ h1{font-size:40px;margin:6px 0 4px;color:#e8743b;text-shadow:3px 3px 0 #ffe0b8;}
 .lv-btn{margin:0 10px;padding:10px 24px;border-radius:40px;font-size:26px;font-weight:bold;background:#fff;color:#b5a78a;box-shadow:0 5px 0 #e6d6b3;}
 .lv-btn.on1{background:#ffcf7a;color:#7a4a00;box-shadow:0 5px 0 #e0a94a;}
 .lv-btn.on2{background:#8cc4f5;color:#123e6b;box-shadow:0 5px 0 #5a97d0;}
-.menu{display:flex;flex-wrap:wrap;justify-content:center;max-width:920px;}
-.menu-btn{width:210px;margin:8px;padding:16px 8px;border-radius:26px;font-size:25px;font-weight:bold;color:#fff;box-shadow:0 8px 0 rgba(0,0,0,.18);}
+.menu{display:flex;flex-wrap:wrap;justify-content:center;max-width:980px;}
+.menu-btn{width:176px;margin:7px;padding:14px 6px;border-radius:26px;font-size:23px;font-weight:bold;color:#fff;box-shadow:0 8px 0 rgba(0,0,0,.18);}
 .menu-btn:active,.lv-btn:active{-webkit-transform:translateY(5px);transform:translateY(5px);}
 .menu-btn .ico{display:block;font-size:52px;margin-bottom:4px;}
-.c-math{background:#f2994a;} .c-clock{background:#56a8e8;} .c-kana{background:#5cbf7a;} .c-kanji{background:#a986d8;}
+.c-math{background:#f2994a;} .c-clock{background:#56a8e8;} .c-kana{background:#5cbf7a;} .c-kanji{background:#a986d8;} .c-eng{background:#e86a8f;}
+#result .menu-btn{width:230px;}
+.choice.pic{font-size:64px;line-height:1.15;min-width:170px;padding:10px 18px;}
+.choice.word{font-family:"Helvetica Neue",Arial,sans-serif;font-size:46px;min-width:170px;}
+.swatch{display:inline-block;width:78px;height:78px;border-radius:50%;border:3px solid #d8ccb0;vertical-align:middle;}
+.replay{font-size:40px;background:#fff;border-radius:50%;width:84px;height:84px;box-shadow:0 5px 0 #e6d6b3;margin:6px;}
+.replay:active{-webkit-transform:translateY(4px);transform:translateY(4px);}
+.en-big{font-family:"Helvetica Neue",Arial,sans-serif;font-size:96px;font-weight:bold;line-height:1.1;color:#e86a8f;}
+.en-blank{font-family:"Helvetica Neue",Arial,sans-serif;font-size:72px;font-weight:bold;letter-spacing:6px;}
+.en-blank .gap{display:inline-block;min-width:1.2em;border-bottom:6px solid #e86a8f;color:#e86a8f;}
+.en-pic{font-size:120px;line-height:1.1;}
 .board{margin-top:12px;width:100%;max-width:860px;background:#fff;border-radius:24px;padding:12px 18px;box-shadow:0 4px 0 #f0e2c4;}
 .board h2{margin:0 0 6px;font-size:22px;color:#b08a3c;}
 .stickers{font-size:38px;line-height:1.35;max-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;word-wrap:break-word;}
@@ -255,15 +265,15 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
   var KANJI = {1:parseSents(SENT1), 2:parseSents(SENT2)};
 
   var LEVELS = {
-    1: {modes:["math","clock","kana","kanji"],
-        labels:{math:"たしざん<br>ひきざん", clock:"とけい", kana:"カタカナ", kanji:"かんじの<br>よみ"},
-        titles:{math:"たしざん・ひきざん", clock:"とけい", kana:"カタカナ", kanji:"かんじの よみ（1年の80字）"}},
-    2: {modes:["math","clock","kanji"],
-        labels:{math:"たしざん<br>ひきざん・九九", clock:"とけい<br>（なん分）", kanji:"かんじの<br>よみ"},
-        titles:{math:"けいさん・九九", clock:"とけい（なん時なん分）", kanji:"かんじの よみ（2年の160字）"}}
+    1: {modes:["math","clock","kana","kanji","english"],
+        labels:{math:"たしざん<br>ひきざん", clock:"とけい", kana:"カタカナ", kanji:"かんじの<br>よみ", english:"English"},
+        titles:{math:"たしざん・ひきざん", clock:"とけい", kana:"カタカナ", kanji:"かんじの よみ（1年の80字）", english:"English — Listen &amp; Shoot"}},
+    2: {modes:["math","clock","kanji","english"],
+        labels:{math:"たしざん<br>ひきざん・九九", clock:"とけい<br>（なん分）", kanji:"かんじの<br>よみ", english:"English<br>Phonics"},
+        titles:{math:"けいさん・九九", clock:"とけい（なん時なん分）", kanji:"かんじの よみ（2年の160字）", english:"English — Phonics"}}
   };
-  var ICONS = {math:"🍎", clock:"🕒", kana:"🍌", kanji:"📖"};
-  var CLASSES = {math:"c-math", clock:"c-clock", kana:"c-kana", kanji:"c-kanji"};
+  var ICONS = {math:"🍎", clock:"🕒", kana:"🍌", kanji:"📖", english:"🔤"};
+  var CLASSES = {math:"c-math", clock:"c-clock", kana:"c-kana", kanji:"c-kanji", english:"c-eng"};
 
   var state = {level:1, mode:null, idx:0, firstTry:true, score:0, current:null, locked:false, marks:[], used:[], dialH:12, dialM:0};
 
@@ -317,6 +327,38 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
       speechSynthesis.speak(u);
     }catch(e){}
   }
+
+  /* ---------- えいごの こえ ---------- */
+  var enVoice = null;
+  function findEnVoice(){
+    if(!window.speechSynthesis) return;
+    var vs = speechSynthesis.getVoices(), best = null, bestScore = -1;
+    for(var i=0;i<vs.length;i++){
+      var v = vs[i], l = (v.lang || "").toLowerCase().replace("_","-");
+      if(l.indexOf("en") !== 0) continue;
+      var n = (v.name || "").toLowerCase(), sc = 1;
+      if(l === "en-us") sc += 3;
+      if(n.indexOf("samantha") >= 0) sc += 4;
+      else if(n.indexOf("siri") >= 0 || n.indexOf("nicky") >= 0 || n.indexOf("ava") >= 0) sc += 3;
+      if(n.indexOf("enhanced") >= 0 || n.indexOf("premium") >= 0) sc += 2;
+      if(n.indexOf("compact") >= 0) sc -= 1;
+      if(v.localService) sc += 1;
+      if(sc > bestScore){ bestScore = sc; best = v; }
+    }
+    if(best) enVoice = best;
+  }
+  if(window.speechSynthesis){ findEnVoice(); var _ovc = speechSynthesis.onvoiceschanged; speechSynthesis.onvoiceschanged = function(){ findVoice(); findEnVoice(); }; }
+  function sayEn(text){
+    try{
+      if(!window.speechSynthesis) return;
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US"; u.rate = 0.85; u.pitch = 1.05;
+      if(enVoice) u.voice = enVoice;
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function speakQ(q, text){ if(q && q.en) sayEn(text); else say(text); }
 
   /* ---------- おと ---------- */
   var actx = null;
@@ -508,9 +550,118 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
             choices:shuffle(set), answer:q.yomi, after:q.plain};
   }
 
+  /* ==================== ENGLISH ====================
+     1ねん … 日本の低学年スタイル：英語を聞いて 絵を えらぶ
+     2ねん … アメリカ1〜2年スタイル：フォニックス入門            */
+  var EN_WORDS = {
+    color:[["red","#e53935"],["blue","#1e88e5"],["yellow","#fdd835"],["green","#43a047"],["orange","#fb8c00"],
+           ["pink","#f48fb1"],["purple","#8e24aa"],["black","#212121"],["white","#ffffff"],["brown","#795548"]],
+    number:[["one",1],["two",2],["three",3],["four",4],["five",5],["six",6],["seven",7],["eight",8],["nine",9],["ten",10]],
+    animal:[["dog","🐶"],["cat","🐱"],["pig","🐷"],["cow","🐮"],["monkey","🐵"],["rabbit","🐰"],["bear","🐻"],
+            ["lion","🦁"],["elephant","🐘"],["fish","🐟"],["bird","🐦"],["frog","🐸"],["horse","🐴"],["tiger","🐯"]],
+    fruit:[["apple","🍎"],["banana","🍌"],["orange","🍊"],["grapes","🍇"],["strawberry","🍓"],["watermelon","🍉"],
+           ["peach","🍑"],["lemon","🍋"],["cherry","🍒"],["pineapple","🍍"],["melon","🍈"]],
+    body:[["eye","👁️"],["ear","👂"],["nose","👃"],["mouth","👄"],["hand","✋"]],
+    thing:[["sun","☀️"],["moon","🌙"],["star","⭐"],["car","🚗"],["bus","🚌"],["train","🚃"],["book","📕"],["ball","⚽"],["cake","🎂"],["flower","🌷"]]
+  };
+  var EN_PRAISE = ["Great job!","Awesome!","Yes!","Perfect!","Well done!","Super!"];
+  function replayBtn(){ return '<button id="replay" class="replay">🔊</button>'; }
+
+  function genEn1(){
+    var cats = ["color","number","animal","fruit","body","thing"];
+    var cat = pick(cats), list = shuffle(EN_WORDS[cat].slice()).slice(0,3), t = list[0];
+    var html = {};
+    list.forEach(function(x){
+      if(cat === "color") html[x[0]] = '<span class="swatch" style="background:'+x[1]+'"></span>';
+      else if(cat === "number") html[x[0]] = String(x[1]);
+      else html[x[0]] = x[1];
+    });
+    var w = t[0];
+    return {kind:"choice", en:true, picChoices:true,
+            html:'<div class="en-pic">🎧</div>'+replayBtn(),
+            prompt:"Listen and shoot!", speak:w+". "+w+".",
+            choices:shuffle(list.map(function(x){ return x[0]; })), choiceHtml:html,
+            answer:w, after:w+"!"};
+  }
+
+  var EN_LETTER = [
+    ["b","bear","🐻"],["b","banana","🍌"],["b","bus","🚌"],["c","cat","🐱"],["c","car","🚗"],["c","cake","🎂"],
+    ["d","dog","🐶"],["d","duck","🦆"],["f","fish","🐟"],["f","fox","🦊"],["f","frog","🐸"],["g","goat","🐐"],["g","grapes","🍇"],
+    ["h","hat","🎩"],["h","horse","🐴"],["h","house","🏠"],["k","key","🔑"],["l","lion","🦁"],["l","lemon","🍋"],["l","leaf","🍃"],
+    ["m","moon","🌙"],["m","monkey","🐵"],["m","milk","🥛"],["n","nose","👃"],["n","nut","🥜"],["p","pig","🐷"],["p","pizza","🍕"],
+    ["r","rabbit","🐰"],["r","ring","💍"],["s","sun","☀️"],["s","star","⭐"],["s","snake","🐍"],["t","tiger","🐯"],["t","tree","🌳"],
+    ["t","train","🚃"],["w","whale","🐳"],["w","watch","⌚"],["z","zebra","🦓"]
+  ];
+  var EN_CVC = [
+    ["cat","🐱"],["dog","🐶"],["pig","🐷"],["bus","🚌"],["sun","☀️"],["bed","🛏️"],["hat","🎩"],["fox","🦊"],["box","📦"],
+    ["bat","🦇"],["pen","🖊️"],["map","🗺️"],["bag","👜"],["hen","🐔"],["web","🕸️"],["van","🚐"],["bug","🐛"],["cup","☕"],
+    ["jet","✈️"],["nut","🥜"],["ten","🔟"],["six","6️⃣"]
+  ];
+  var EN_DIGRAPH = [
+    ["sh","sheep","🐑"],["sh","ship","🚢"],["sh","shell","🐚"],["sh","shirt","👕"],["sh","shoe","👟"],
+    ["ch","cheese","🧀"],["ch","chick","🐥"],["ch","chair","💺"],["ch","cherry","🍒"],
+    ["th","thumb","👍"],["th","three","3️⃣"],["th","think","🤔"]
+  ];
+  var EN_SIGHT = ["the","and","a","to","said","you","he","she","it","in","was","is","for","go","can","we","my","see",
+                  "big","little","come","here","play","what","like","have","they","this","are","do","all","no","yes",
+                  "get","good","with","one","two","look","me","up","down","where","who","out","there"];
+
+  function vowelSwap(w){
+    var v = "aeiou", mid = w.charAt(1), outs = [];
+    shuffle(v.split("")).forEach(function(c){ if(c !== mid && outs.length < 2) outs.push(w.charAt(0)+c+w.charAt(2)); });
+    return outs;
+  }
+  function genEn2(){
+    var type = pick(["letter","letter","spell","missing","digraph","sight","sight"]);
+    if(type === "letter"){
+      var t = pick(EN_LETTER), others = [], html = {};
+      shuffle(EN_LETTER.slice()).forEach(function(x){
+        if(others.length < 2 && x[0] !== t[0] && others.every(function(o){ return o[0] !== x[0]; })) others.push(x);
+      });
+      var set = [t].concat(others);
+      set.forEach(function(x){ html[x[1]] = x[2]; });
+      return {kind:"choice", en:true, picChoices:true,
+              html:'<div class="en-big">'+t[0].toUpperCase()+' '+t[0]+'</div>',
+              prompt:"Which one starts with "+t[0].toUpperCase()+"?", speak:"Which one starts with "+t[0].toUpperCase()+"?",
+              choices:shuffle(set.map(function(x){ return x[1]; })), choiceHtml:html, answer:t[1],
+              after:t[0].toUpperCase()+". "+t[1]+"!"};
+    }
+    if(type === "spell"){
+      var c = pick(EN_CVC);
+      return {kind:"choice", en:true, wordChoices:true,
+              html:'<div class="en-pic">'+c[1]+'</div>',
+              prompt:"Which word is it?", speak:"Which word is it?",
+              choices:shuffle([c[0]].concat(vowelSwap(c[0]))), answer:c[0], after:c[0]+"!"};
+    }
+    if(type === "missing"){
+      var m = pick(EN_CVC), mid = m[0].charAt(1), opts = [mid];
+      shuffle("aeiou".split("")).forEach(function(ch){ if(opts.length < 3 && opts.indexOf(ch) < 0) opts.push(ch); });
+      return {kind:"choice", en:true, wordChoices:true,
+              html:'<div class="en-pic">'+m[1]+'</div><div class="en-blank">'+m[0].charAt(0)+'<span class="gap">?</span>'+m[0].charAt(2)+'</div>',
+              prompt:"Which letter is missing?", speak:"Which letter is missing?",
+              choices:shuffle(opts), answer:mid, after:m[0]+"!"};
+    }
+    if(type === "digraph"){
+      var d = pick(EN_DIGRAPH);
+      return {kind:"choice", en:true, wordChoices:true,
+              html:'<div class="en-pic">'+d[2]+'</div><div class="en-blank"><span class="gap">?</span>'+d[1].slice(2)+'</div>',
+              prompt:"sh, ch, or th?", speak:"S H, C H, or T H?",
+              choices:shuffle(["sh","ch","th"]), answer:d[0], after:d[1]+"!"};
+    }
+    // sight word
+    var sw = pick(EN_SIGHT), pool = [];
+    shuffle(EN_SIGHT.slice()).forEach(function(x){
+      if(pool.length < 2 && x !== sw && Math.abs(x.length - sw.length) <= 1) pool.push(x);
+    });
+    return {kind:"choice", en:true, wordChoices:true,
+            html:'<div class="en-pic">🎧</div>'+replayBtn(),
+            prompt:"Listen and shoot!", speak:sw+". "+sw+".",
+            choices:shuffle([sw].concat(pool)), answer:sw, after:sw+"!"};
+  }
+
   var GEN = {
-    1: {math:genMath1, clock:genClock1, kana:genKana, kanji:genKanji},
-    2: {math:genMath2, clock:genClock2, kanji:genKanji}
+    1: {math:genMath1, clock:genClock1, kana:genKana, kanji:genKanji, english:genEn1},
+    2: {math:genMath2, clock:genClock2, kanji:genKanji, english:genEn2}
   };
 
   /* ---------- ホーム ---------- */
@@ -551,7 +702,7 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
 
   function startGame(mode){
     state.mode = mode; state.idx = 0; state.score = 0; state.marks = []; state.used = [];
-    $("modeTitle").innerHTML = '<span class="badge b'+state.level+'">'+state.level+'ねん</span>' + LEVELS[state.level].titles[mode];
+    $("modeTitle").innerHTML = '<span class="badge b'+state.level+'">'+(mode === "english" ? "Grade "+state.level : state.level+'ねん')+'</span>' + LEVELS[state.level].titles[mode];
     show("game");
     nextQuestion();
   }
@@ -564,7 +715,9 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
     $("qarea").innerHTML = state.current.html + (state.current.hint ? '<div class="hint">'+state.current.hint+'</div>' : "");
     $("prompt").textContent = state.current.prompt;
     if(state.current.kind === "dial") buildDials(); else buildChoices();
-    say(state.current.speak);
+    var rb = $("replay");
+    if(rb){ var qq = state.current; rb.addEventListener("click", function(){ speakQ(qq, qq.speak); }); }
+    speakQ(state.current, state.current.speak);
   }
 
   /* ---------- 3たく（ゆみや） ---------- */
@@ -574,7 +727,9 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
     box.className = "choices"; box.innerHTML = "";
     state.current.choices.forEach(function(label){
       var b = document.createElement("button");
-      b.className = "choice"; b.textContent = label;
+      var q = state.current;
+      b.className = "choice" + (q.picChoices ? " pic" : "") + (q.wordChoices ? " word" : "");
+      if(q.choiceHtml) b.innerHTML = q.choiceHtml[label]; else b.textContent = label;
       b.addEventListener("click", function(){ choose(b, label); });
       box.appendChild(b);
     });
@@ -584,12 +739,12 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
     var ok = (label === state.current.answer);
     state.locked = true;
     shootArrow(btn, ok, function(){
-      if(ok){ btn.className = "choice ok"; correct(); }
+      if(ok){ btn.className += " ok"; correct(); }
       else {
         state.firstTry = false; state.locked = false;
-        btn.className = "choice ng"; btn.disabled = true;
+        btn.className += " ng"; btn.disabled = true;
         tone([240,200], 0.2);
-        say("おしい！もう一回。");
+        if(state.current.en) sayEn("Oops! Try again."); else say("おしい！もう一回。");
       }
     });
   }
@@ -663,7 +818,8 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
     state.marks.push(state.firstTry ? "⭐" : "⭕");
     tone([523,659,784], 0.28);
     confetti();
-    say(pick(PRAISES) + state.current.after);
+    if(state.current.en) sayEn(pick(EN_PRAISE) + " " + state.current.after);
+    else say(pick(PRAISES) + state.current.after);
     state.idx++;
     renderDots();
     setTimeout(nextQuestion, 2000);
@@ -673,12 +829,16 @@ body.lv2 .dnum.sel{background:#3b6fb0;}
     var list = loadStickers().slice(); list.push(sticker); saveStickers(list);
     $("resSticker").textContent = sticker;
     var perfect = state.score === TOTAL;
-    $("resMsg").textContent = perfect ? "ぜんもん いっぱつ せいかい！" : "よく がんばったね！";
+    var en = state.mode === "english";
+    $("resMsg").textContent = en ? (perfect ? "Perfect! 5 out of 5!" : "Great job!") : (perfect ? "ぜんもん いっぱつ せいかい！" : "よく がんばったね！");
+    $("again").textContent = en ? "Play again" : "もういっかい";
+    $("toHome").textContent = en ? "Home" : "おうちに もどる";
     $("resScore").textContent = "⭐ " + state.score + " / " + TOTAL;
     show("result");
     tone([523,659,784,1046], 0.35);
     confetti();
-    say((perfect ? "すごい！全部、一発で正解！" : "よく頑張ったね！") + "シールをゲット！");
+    if(en) sayEn((perfect ? "Perfect! " : "Great job! ") + "You got a sticker!");
+    else say((perfect ? "すごい！全部、一発で正解！" : "よく頑張ったね！") + "シールをゲット！");
   }
   function goHome(){ try{speechSynthesis.cancel();}catch(e){} renderHome(); show("home"); }
 
